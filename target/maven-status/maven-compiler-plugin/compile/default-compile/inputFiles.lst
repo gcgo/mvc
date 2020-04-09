@@ -1,5 +1,7 @@
 D:\workspace\mvc\src\main\java\com\gcgo\demo\controller\DemoController.java
 D:\workspace\mvc\src\main\java\com\gcgo\framework\annotation\MyAutowired.java
+D:\workspace\mvc\src\main\java\com\gcgo\framework\annotation\Security.java
+D:\workspace\mvc\src\main\java\com\gcgo\demo\controller\SecurityController.java
 D:\workspace\mvc\src\main\java\com\gcgo\framework\servlet\MyDispatcherServlet.java
 D:\workspace\mvc\src\main\java\com\gcgo\framework\annotation\MyController.java
 D:\workspace\mvc\src\main\java\com\gcgo\framework\annotation\MyService.java

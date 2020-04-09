@@ -1,9 +1,6 @@
 package com.gcgo.framework.servlet;
 
-import com.gcgo.framework.annotation.MyAutowired;
-import com.gcgo.framework.annotation.MyController;
-import com.gcgo.framework.annotation.MyRequestMapping;
-import com.gcgo.framework.annotation.MyService;
+import com.gcgo.framework.annotation.*;
 import com.gcgo.framework.pojo.Handler;
 import org.apache.commons.lang3.StringUtils;
 
@@ -58,13 +55,25 @@ public class MyDispatcherServlet extends HttpServlet {
         //将前端请求数据，按顺序填入数组(普通类型参数)
         //获得的是前端传进来的参数，不包括MVC默认支持的HttpServletRequest和HttpServletResponse
         Map<String, String[]> parameterMap = req.getParameterMap();
-        for (Map.Entry<String, String[]> param : parameterMap.entrySet()) {
+        for (Map.Entry<String, String[]> param : parameterMap.entrySet()) {//name:lisi
             String value = StringUtils.join(param.getValue(), ",");//把String数组元素用“,”拼接
             //匹配上了就填充
             if (handler.getParamIndexMapping().containsKey(param.getKey())) {//如果缓存的对应该url的方法参数列表中包含当前前端传进来的参数，名称一样！！
+                //*************权限验证********************
+                if (handler.getAdminSet().size() > 0 && !handler.getAdminSet().contains(value)) {
+                    System.out.println();
+                    System.out.println("***********拒绝访问*********");
+                    System.out.println("用户：" + value + "没有访问权限");
+                    System.out.println("***************************");
+                    resp.setContentType("text/html;charset=utf-8");
+                    resp.getWriter().write("用户：" + value + "没有访问权限");
+                    return;
+                }
+                //*************权限验证********************
                 Integer index = handler.getParamIndexMapping().get(param.getKey());//参数在方法中的顺序
                 paramValues[index] = value;//填充到对应位置
             }
+
         }
         //HttpServletRequest，看看缓存的方法中参数列表中有没有HttpServletRequest，有就也赋值
         if (handler.getParamIndexMapping().containsKey(HttpServletRequest.class.getSimpleName())) {
@@ -130,9 +139,9 @@ public class MyDispatcherServlet extends HttpServlet {
         //扫描所有对象的方法，判断有没有@MyRequestMapping注解
         for (Map.Entry<String, Object> entry : ioc.entrySet()) {
             Class<?> aClass = entry.getValue().getClass();
-            StringBuilder sbUrl = new StringBuilder();//用于拼接url
             //不是controller层就pass
             if (!aClass.isAnnotationPresent(MyController.class)) continue;
+            StringBuilder sbUrl = new StringBuilder();//用于拼接url
             String baseURL = "";
             //如果类上有@MyRequestMapping注解则先记录baseURL
             if (aClass.isAnnotationPresent(MyRequestMapping.class)) {
@@ -140,6 +149,18 @@ public class MyDispatcherServlet extends HttpServlet {
                 baseURL = annotation.value();
                 sbUrl.append(baseURL);
             }
+            //*******************权限记录***********************
+            //如果类上有@Security注解则记录可访问用户列表
+            Set<String> typeAdmins = new HashSet<>();//只存储类上的权限用户
+            if (aClass.isAnnotationPresent(Security.class)) {
+                Security annotation = aClass.getAnnotation(Security.class);
+                //获取类注解上的访问权限user列表
+                String[] typeAvailableUser = annotation.value();
+                //添加到set集合中
+                typeAdmins.addAll(Arrays.asList(typeAvailableUser));
+            }
+            //*******************权限记录***********************
+
             //判断方法上哪些有@MyRequestMapping注解
             Method[] methods = aClass.getMethods();
 
@@ -164,6 +185,24 @@ public class MyDispatcherServlet extends HttpServlet {
                         handler.getParamIndexMapping().put(parameter.getName(), i);
                     }
                 }
+                //*******************处理方法上的@security注解***********************
+                Set<String> methodAdmins = new HashSet<>();//只存储方法上的权限用户
+                if (method.isAnnotationPresent(Security.class)) {
+                    Security securityAnnotation = method.getAnnotation(Security.class);
+                    String[] methodAvailableUser = securityAnnotation.value();
+                    //添加到set集合中
+                    methodAdmins.addAll(Arrays.asList(methodAvailableUser));
+                }
+                //将所有权限用户加入Handler中保存
+                Set<String> adminSet = handler.getAdminSet();
+                if (typeAdmins.size() > 0) {
+                    adminSet.addAll(typeAdmins);
+                }
+                if (methodAdmins.size() > 0) {
+                    adminSet.addAll(methodAdmins);
+                }
+                //*******************处理方法上的@security注解***********************
+
                 //加入缓存
                 handlerMapping.add(handler);
                 //清空sb
