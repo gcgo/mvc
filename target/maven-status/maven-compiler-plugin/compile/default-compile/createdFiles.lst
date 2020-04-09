@@ -1,0 +1,9 @@
+com\gcgo\framework\annotation\MyController.class
+com\gcgo\framework\servlet\MyDispatcherServlet.class
+com\gcgo\framework\annotation\MyRequestMapping.class
+com\gcgo\demo\service\impl\DemoServiceImpl.class
+com\gcgo\demo\service\DemoService.class
+com\gcgo\framework\annotation\MyAutowired.class
+com\gcgo\demo\controller\DemoController.class
+com\gcgo\framework\annotation\MyService.class
+com\gcgo\framework\pojo\Handler.class
